@@ -23,18 +23,8 @@ consul_directories << node['consul']['data_dir']
 consul_directories << node['consul']['config_dir']
 consul_directories << '/var/lib/consul'
 
-# Select service user & group
-case node['consul']['init_style']
-when 'runit'
-  include_recipe 'runit::default'
-
-  consul_user = node['consul']['service_user']
-  consul_group = node['consul']['service_group']
-  consul_directories << '/var/log/consul'
-else
-  consul_user = 'root'
-  consul_group = 'root'
-end
+consul_user = 'root'
+consul_group = 'root'
 
 # Create service user
 user "consul service user: #{consul_user}" do
@@ -68,24 +58,14 @@ service_config['data_dir'] = node['consul']['data_dir']
 num_cluster = node['consul']['bootstrap_expect'].to_i
 
 case node['consul']['service_mode']
-when 'bootstrap'
-  service_config['server'] = true
-  service_config['bootstrap'] = true
-when 'cluster'
-  service_config['server'] = true
-  if num_cluster > 1
-    service_config['bootstrap_expect'] = num_cluster
-    service_config['retry_join'] = node['consul']['servers']
-  else
-    service_config['bootstrap'] = true
-  end
 when 'server'
   service_config['server'] = true
   service_config['retry_join'] = node['consul']['servers']
+  service_config['bootstrap_expect'] = node['consul']['bootstrap_expect'].to_i if node['consul']['bootstrap_expect']
 when 'client'
   service_config['retry_join'] = node['consul']['servers']
 else
-  Chef::Application.fatal! %Q(node['consul']['service_mode'] must be "bootstrap", "cluster", "server", or "client")
+  Chef::Application.fatal! %Q(node['consul']['service_mode'] must be "server", or "client")
 end
 
 iface_addr_map = {
@@ -103,11 +83,6 @@ iface_addr_map.each_pair do |interface,addr|
   else
     Chef::Application.fatal!("Interface specified in node['consul'][#{interface}] does not exist!")
   end
-end
-
-if node['consul']['serve_ui']
-  service_config['ui_dir'] = node['consul']['ui_dir']
-  service_config['client_addr'] = node['consul']['client_addr']
 end
 
 copy_params = [
@@ -182,47 +157,21 @@ file consul_config_filename do
   notifies :restart, "service[consul]"
 end
 
-case node['consul']['init_style']
-when 'init'
-  if platform?("ubuntu")
-    init_file = '/etc/init/consul.conf'
-    init_tmpl = 'consul.conf.erb'
-  else
-    init_file = '/etc/init.d/consul'
-    init_tmpl = 'consul-init.erb'
-  end
+init_file = '/etc/init.d/consul'
+init_tmpl = 'consul-init.erb'
 
-  template node['consul']['etc_config_dir'] do
-    source 'consul-sysconfig.erb'
-    mode 0755
-    notifies :create, "template[#{init_file}]", :immediately
-  end
+template init_file do
+  source init_tmpl
+  mode 0755
+  variables(
+    consul_binary: "#{node['consul']['install_dir']}/consul",
+    config_dir: node['consul']['config_dir'],
+  )
+  notifies :restart, 'service[consul]', :immediately
+end
 
-  template init_file do
-    source init_tmpl
-    mode 0755
-    variables(
-      consul_binary: "#{node['consul']['install_dir']}/consul",
-      config_dir: node['consul']['config_dir'],
-    )
-    notifies :restart, 'service[consul]', :immediately
-  end
-
-  service 'consul' do
-    provider Chef::Provider::Service::Upstart if platform?("ubuntu")
-    supports status: true, restart: true, reload: true
-    action [:enable, :start]
-    subscribes :restart, "file[#{consul_config_filename}", :delayed
-  end
-when 'runit'
-  runit_service 'consul' do
-    supports status: true, restart: true, reload: true
-    action [:enable, :start]
-    subscribes :restart, "file[#{consul_config_filename}]", :delayed
-    log true
-    options(
-      consul_binary: "#{node['consul']['install_dir']}/consul",
-      config_dir: node['consul']['config_dir'],
-    )
-  end
+service 'consul' do
+  supports status: true, stop: true, restart: true, reload: true
+  action [:enable, :start]
+  subscribes :restart, "file[#{consul_config_filename}", :delayed
 end

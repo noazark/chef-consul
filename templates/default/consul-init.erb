@@ -14,10 +14,6 @@
 #                       * Multi Datacenter
 ### END INIT INFO
 
-if [ -f <%= node['consul']['etc_config_dir'] %> ]; then
-. <%= node['consul']['etc_config_dir'] %>
-fi
-
 export GOMAXPROCS=${GOMAXPROCS}
 
 CMD="<%= @consul_binary %> agent -config-dir <%= @config_dir %>"

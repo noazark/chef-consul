@@ -15,5 +15,5 @@
 # limitations under the License.
 #
 
-include_recipe "consul::install_#{node['consul']['install_method']}"
+include_recipe "consul::install_binary"
 include_recipe 'consul::_service'

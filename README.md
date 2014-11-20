@@ -127,12 +127,6 @@ Installs and configures [Consul][1].
     <td>Value of <i>bind_addr</i></td>
   </tr>
   <tr>
-    <td><tt>['consul']['init_style']</tt></td>
-    <td>String</td>
-    <td>Service init mode for running consul as: init or runit</td>
-    <td><tt>init</tt></td>
-  </tr>
-  <tr>
     <td><tt>['consul']['service_user']</tt></td>
     <td>String</td>
     <td>For runit service: run consul as this user (init uses 'root')</td>
@@ -348,32 +342,6 @@ Include `consul::install_binary` in your node's `run_list`:
 }
 ```
 
-### consul::install_source
-
-Include `consul::install_source` in your node's `run_list`:
-
-```json
-{
-  "run_list": [
-    "recipe[consul::install_source]"
-  ]
-}
-```
-
-### consul::ui
-
-This installs the UI into a specified directory.
-
-Include `consul::ui` in your node's `run_list`:
-
-```json
-{
-  "run_list": [
-    "recipe[consul::ui]"
-  ]
-}
-```
-
 ### LWRP
 
 ##### Adding key watch
@@ -440,4 +408,3 @@ Created and maintained by [John Bellone][3] [@johnbellone][2] (<jbellone@bloombe
 [5]: http://travis-ci.org/johnbellone/consul-cookbook
 [6]: https://coveralls.io/r/johnbellone/consul-cookbook
 [7]: https://docs.getchef.com/essentials_data_bags.html
-

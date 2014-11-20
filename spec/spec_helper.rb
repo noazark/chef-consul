@@ -2,11 +2,10 @@ require 'chefspec'
 require 'chefspec/berkshelf'
 require 'chefspec/cacher'
 require 'chefspec/server'
-require 'coveralls'
 
-require_relative 'support/matchers'
-
-Coveralls.wear!
+if defined?(ChefSpec)
+  require_relative 'support/matchers'
+end
 
 RSpec.configure do |config|
   config.color = true
