@@ -75,15 +75,15 @@ when 'cluster'
   service_config['server'] = true
   if num_cluster > 1
     service_config['bootstrap_expect'] = num_cluster
-    service_config['start_join'] = node['consul']['servers']
+    service_config['retry_join'] = node['consul']['servers']
   else
     service_config['bootstrap'] = true
   end
 when 'server'
   service_config['server'] = true
-  service_config['start_join'] = node['consul']['servers']
+  service_config['retry_join'] = node['consul']['servers']
 when 'client'
-  service_config['start_join'] = node['consul']['servers']
+  service_config['retry_join'] = node['consul']['servers']
 else
   Chef::Application.fatal! %Q(node['consul']['service_mode'] must be "bootstrap", "cluster", "server", or "client")
 end
