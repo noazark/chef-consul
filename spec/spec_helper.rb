@@ -2,11 +2,10 @@ require 'chefspec'
 require 'chefspec/berkshelf'
 require 'chefspec/cacher'
 require 'chefspec/server'
-require 'coveralls'
 
-require_relative 'support/matchers'
-
-Coveralls.wear!
+if defined?(ChefSpec)
+  require_relative 'support/matchers'
+end
 
 RSpec.configure do |config|
   config.color = true
@@ -36,7 +35,7 @@ end
 at_exit { ChefSpec::Coverage.report! }
 
 RSpec.shared_context 'recipe tests', type: :recipe do
-  let(:chef_run) { ChefSpec::Runner.new(node_attributes).converge(described_recipe) }
+  let(:chef_run) { ChefSpec::SoloRunner.new(node_attributes).converge(described_recipe) }
 
   def node_attributes
     {

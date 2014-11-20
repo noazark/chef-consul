@@ -8,16 +8,6 @@ provisioner:
 platforms:
   - name: ubuntu-12.04
   - name: ubuntu-14.04
-  - name: centos-6.5
-    attributes:
-      golang:
-        install_dir: '/usr'
-  - name: centos-5.10
-    run_list:
-      - recipe[yum-repoforge::default]
-    attributes:
-      golang:
-        install_dir: '/usr'
 
 suites:
   - name: default
@@ -29,21 +19,6 @@ suites:
           bind_interface: eth0
           advertise_interface: eth0
           encrypt: CGXC2NsXW4AvuB4h5ODYzQ==
-  - name: runit
-    run_list:
-      - recipe[consul::default]
-    attributes:
-      consul:
-          datacenter: FortMeade
-          init_style: runit
-  - name: ui
-    run_list:
-      - recipe[consul::default]
-      - recipe[consul::ui]
-    attributes:
-      consul:
-         serve_ui: true
-         client_interface: eth0
   - name: cluster
     run_list:
       - recipe[consul::default]
