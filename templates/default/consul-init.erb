@@ -16,97 +16,68 @@
 
 export GOMAXPROCS=${GOMAXPROCS}
 
-CMD="<%= @consul_binary %> agent -config-dir <%= @config_dir %>"
+DAEMON="<%= @consul_binary %>"
+DAEMON_ARGS="agent -config-dir <%= @config_dir %> 2> $LOGFILE"
 NAME="consul"
 
 PIDFILE="/var/run/$NAME.pid"
 LOGFILE="/var/log/$NAME.log"
 
-get_pid() {
-    cat "$PIDFILE"
+do_start() {
+  start-stop-daemon \
+    --start \
+    --background \
+    --exec $DAEMON \
+    --make-pidfile \
+    --pidfile $PIDFILE \
+    -- $DAEMON_ARGS
 }
 
-is_running() {
-    [ -f "$PIDFILE" ] && ps `get_pid` > /dev/null 2>&1
+do_stop() {
+  start-stop-daemon \
+    --stop \
+    --pidfile $PIDFILE
+}
+
+do_reload() {
+  start-stop-daemon \
+    --exec $DAEMON \
+    --pidfile $PIDFILE \
+    -s 1
+}
+
+do_status() {
+  start-stop-daemon \
+    --status
+    --pidfile $PIDFILE
 }
 
 case "$1" in
-    start)
-    if is_running; then
-        echo "$NAME already running"
-    else
-        echo "Starting $NAME"
-        $CMD >> "$LOGFILE" &
-        echo $! > "$PIDFILE"
-        if ! is_running; then
-            echo "Unable to start $NAME, see $LOGFILE"
-            exit 1
-        fi
-    fi
-    ;;
-    stop)
-    if is_running; then
-        echo -n "Stopping $NAME..."
-        kill -INT `get_pid`
-        for i in {1..10}
-        do
-            if ! is_running; then
-                break
-            fi
-
-            echo -n "."
-            sleep 1
-        done
-        echo
-
-        if is_running; then
-            echo "$NAME not stopped; may still be shutting down or shutdown may have failed"
-            exit 1
-        else
-            echo "$NAME stopped"
-            if [ -f "$PIDFILE" ]; then
-                rm "$PIDFILE"
-            fi
-        fi
-    else
-        echo "$NAME not running"
-    fi
-    ;;
-    restart)
-    $0 stop
-    if is_running; then
-        echo "Unable to stop $NAME, will not attempt to start"
-        exit 1
-    fi
-    $0 start
-    ;;
-    status)
-    if is_running; then
-        echo "$NAME is running"
-    else
-        echo "$NAME is stopped"
-        exit 1
-    fi
-    ;;
-    reload)
-    if is_running; then
-        echo -n "Reloading $NAME..."
-        kill -HUP `get_pid`
-        sleep 1
-        echo
-
-        if ! is_running; then
-            echo "$NAME has died, see $LOGFILE"
-            exit 1
-        fi
-    else
-        echo "$NAME not running"
-    fi
-    ;;
-    *)
+  start)
+    echo "Starting $NAME"
+    do_start
+  ;;
+  stop)
+    echo "Stopping $NAME"
+    do_stop
+  ;;
+  restart)
+    echo "Restarting $NAME"
+    do_stop
+    do_start
+  ;;
+  reload)
+    echo "Reloading $NAME"
+    do_reload
+  ;;
+  status)
+    echo "Checking $NAME status"
+    do_status
+  ;;
+  *)
     echo "Usage: $0 {start|stop|restart|reload|status}"
     exit 1
-    ;;
+  ;;
 esac
 
 exit 0

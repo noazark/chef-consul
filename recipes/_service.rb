@@ -17,6 +17,10 @@
 
 require 'json'
 
+package 'start-stop-daemon' do
+  action :upgrade
+end
+
 # Configure directories
 consul_directories = []
 consul_directories << node['consul']['data_dir']
