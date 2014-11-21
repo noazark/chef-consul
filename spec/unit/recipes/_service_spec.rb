@@ -26,7 +26,7 @@ describe_recipe 'consul::_service' do
 
   context 'with a server service_mode, and a server list to join' do
     let(:chef_run) do
-      ChefSpec::Runner.new(node_attributes) do |node|
+      ChefSpec::SoloRunner.new(node_attributes) do |node|
         node.set['consul']['service_mode'] = 'server'
         node.set['consul']['bootstrap_expect'] = '3'
         node.set['consul']['servers'] = [ 'server1', 'server2', 'server3' ]
@@ -43,7 +43,7 @@ describe_recipe 'consul::_service' do
 
   context 'with a server service_mode, bootstrap_expect = 1, and a server list' do
     let(:chef_run) do
-      ChefSpec::Runner.new(node_attributes) do |node|
+      ChefSpec::SoloRunner.new(node_attributes) do |node|
         node.set['consul']['service_mode'] = 'server'
         node.set['consul']['bootstrap_expect'] = '1'
         node.set['consul']['servers'] = [ 'server1', 'server2', 'server3' ]
@@ -61,7 +61,7 @@ describe_recipe 'consul::_service' do
   context 'with gossip_encryption turned ON' do
     context 'with key exists in the databag' do
       let(:chef_run) do
-        ChefSpec::Runner.new(node_attributes) do |node|
+        ChefSpec::SoloRunner.new(node_attributes) do |node|
           node.set['consul']['encrypt_enabled'] = true
         end.converge(described_recipe)
       end
@@ -78,7 +78,7 @@ describe_recipe 'consul::_service' do
     context 'with key doesn\'t exist in the databag' do
       context 'databag doesn\'t exists' do
         let(:chef_run) do
-          ChefSpec::Runner.new(node_attributes) do |node|
+          ChefSpec::SoloRunner.new(node_attributes) do |node|
             node.set['consul']['encrypt_enabled'] = true
             node.set['consul']['encrypt'] = "consul_secret_node_attr"
           end.converge(described_recipe)
@@ -95,7 +95,7 @@ describe_recipe 'consul::_service' do
       end
       context 'encrypt is empty in the node attribute' do
         let(:chef_run) do
-          ChefSpec::Runner.new(node_attributes) do |node|
+          ChefSpec::SoloRunner.new(node_attributes) do |node|
             node.set['consul']['encrypt_enabled'] = true
             node.set['consul']['encrypt'] = ''
           end.converge(described_recipe)
@@ -114,7 +114,7 @@ describe_recipe 'consul::_service' do
   context 'with tls enabled' do
     context 'when node key file and ca_cert is unique and exists in databag, verify* is true and ca_file doesn\'t exist in databag' do
       let(:chef_run) do
-        ChefSpec::Runner.new(node_attributes) do |node|
+        ChefSpec::SoloRunner.new(node_attributes) do |node|
           node.set['consul']['verify_incoming'] = true
           node.set['consul']['verify_outgoing'] = true
           node.set['consul']['ca_cert'] = 'begin_consul_node_ca_file_end'
@@ -146,7 +146,7 @@ describe_recipe 'consul::_service' do
     end
     context 'when node key, cert, and ca is nil, and verify incoming true' do
       let(:chef_run) do
-        ChefSpec::Runner.new(node_attributes) do |node|
+        ChefSpec::SoloRunner.new(node_attributes) do |node|
           node.set['consul']['verify_incoming'] = true
         end.converge(described_recipe)
       end
@@ -167,7 +167,7 @@ describe_recipe 'consul::_service' do
     end
     context 'when key_file, and cert exists as the node\'s attributes, and verify_outgoing true' do
       let(:chef_run) do
-        ChefSpec::Runner.new(node_attributes) do |node|
+        ChefSpec::SoloRunner.new(node_attributes) do |node|
           node.set['consul']['verify_outgoing'] = true
           node.set['consul']['key_file'] = 'begin_consul_node_key_file_end'
           node.set['consul']['cert_file'] = 'begin_consul_node_cert_file_end'
