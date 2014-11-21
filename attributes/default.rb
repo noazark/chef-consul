@@ -48,22 +48,6 @@ default['consul']['ports'] = {
   "server"   => 8300,
 }
 
-# Gossip encryption
-default['consul']['encrypt_enabled'] = false
-default['consul']['encrypt'] = nil
-default['consul']['extra_params'] = {}
-# TLS support
-default['consul']['verify_incoming'] = false
-default['consul']['verify_outgoing'] = false
-# Cert in pem format
-default['consul']['ca_cert'] = nil
-default['consul']['ca_path'] = "%{config_dir}/ca.pem"
-default['consul']['cert_file'] = nil
-default['consul']['cert_path'] = "%{config_dir}/cert.pem"
-# Cert in pem format. It can be unique for each host
-default['consul']['key_file'] = nil
-default['consul']['key_file_path'] = "%{config_dir}/key.pem"
-
 # Optionally bind to a specific interface
 default['consul']['bind_interface'] = nil
 default['consul']['advertise_interface'] = nil

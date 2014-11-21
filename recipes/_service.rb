@@ -53,17 +53,16 @@ consul_directories.each do |dirname|
 end
 
 # Determine service params
-service_config = JSON.parse(node['consul']['extra_params'].to_json)
+service_config = {}
 service_config['data_dir'] = node['consul']['data_dir']
 num_cluster = node['consul']['bootstrap_expect'].to_i
+service_config['retry_join'] = node['consul']['servers']
 
 case node['consul']['service_mode']
 when 'server'
   service_config['server'] = true
-  service_config['retry_join'] = node['consul']['servers']
   service_config['bootstrap_expect'] = node['consul']['bootstrap_expect'].to_i if node['consul']['bootstrap_expect']
 when 'client'
-  service_config['retry_join'] = node['consul']['servers']
 else
   Chef::Application.fatal! %Q(node['consul']['service_mode'] must be "server", or "client")
 end
@@ -98,53 +97,6 @@ copy_params.each do |key|
   end
 end
 
-dbi = nil
-# Gossip encryption
-if node.consul.encrypt_enabled
-  # Fetch the databag only once, and use empty hash if it doesn't exists
-  dbi = consul_encrypted_dbi || {}
-  secret = consul_dbi_key_with_node_default(dbi, 'encrypt')
-  raise "Consul encrypt key is empty or nil" if secret.nil? or secret.empty?
-  service_config['encrypt'] = secret
-else
-  # for backward compatibilty
-  service_config['encrypt'] = node.consul.encrypt unless node.consul.encrypt.nil?
-end
-
-# TLS encryption
-if node.consul.verify_incoming || node.consul.verify_outgoing
-  dbi = consul_encrypted_dbi || {} if dbi.nil?
-  service_config['verify_outgoing'] = node.consul.verify_outgoing
-  service_config['verify_incoming'] = node.consul.verify_incoming
-
-  ca_path = node.consul.ca_path % { config_dir: node.consul.config_dir }
-  service_config['ca_file'] = ca_path
-
-  cert_path = node.consul.cert_path % { config_dir: node.consul.config_dir }
-  service_config['cert_file'] = cert_path
-
-  key_path = node.consul.key_file_path % { config_dir: node.consul.config_dir }
-  service_config['key_file'] = key_path
-
-  # Search for key_file_hostname since key and cert file can be unique/host
-  key_content = dbi['key_file_' + node.fqdn] || consul_dbi_key_with_node_default(dbi, 'key_file')
-  cert_content = dbi['cert_file_' + node.fqdn] || consul_dbi_key_with_node_default(dbi, 'cert_file')
-  ca_content = consul_dbi_key_with_node_default(dbi, 'ca_cert')
-
-  # Save the certs if exists
-  {ca_path => ca_content, key_path => key_content, cert_path => cert_content}.each do |path, content|
-    unless content.nil? or content.empty?
-      file path do
-        user consul_user
-        group consul_group
-        mode 0600
-        action :create
-        content content
-      end
-    end
-  end
-end
-
 consul_config_filename = File.join(node['consul']['config_dir'], 'default.json')
 
 file consul_config_filename do
@@ -153,7 +105,6 @@ file consul_config_filename do
   mode 0600
   action :create
   content JSON.pretty_generate(service_config, quirks_mode: true)
-  # https://github.com/johnbellone/consul-cookbook/issues/72
   notifies :restart, "service[consul]"
 end
 
