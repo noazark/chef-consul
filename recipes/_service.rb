@@ -105,7 +105,7 @@ file consul_config_filename do
   mode 0600
   action :create
   content JSON.pretty_generate(service_config, quirks_mode: true)
-  notifies :restart, "service[consul]"
+  notifies :reload, "service[consul]"
 end
 
 init_file = '/etc/init.d/consul'
@@ -118,11 +118,11 @@ template init_file do
     consul_binary: "#{node['consul']['install_dir']}/consul",
     config_dir: node['consul']['config_dir'],
   )
-  notifies :restart, 'service[consul]', :immediately
+  notifies :reload, 'service[consul]', :immediately
 end
 
 service 'consul' do
   supports status: true, stop: true, restart: true, reload: true
   action [:enable, :start]
-  subscribes :restart, "file[#{consul_config_filename}", :delayed
+  subscribes :reload, "file[#{consul_config_filename}", :delayed
 end
